@@ -1,0 +1,43 @@
+- name: Create website directory
+  file:
+    path: "{{ website_path }}"
+    state: directory
+    mode: "0755"
+
+- name: Check if Laravel project exists
+  stat:
+    path: "{{ website_path }}/artisan"
+  register: laravel_exists
+
+- name: Create Laravel project
+  command: composer create-project laravel/laravel {{ website_path }} --no-interaction
+  when: not laravel_exists.stat.exists
+
+- name: Set ownership of website directory to www-data
+  file:
+    path: "{{ website_path }}"
+    state: directory
+    recurse: yes
+    owner: www-data
+    group: www-data
+
+- name: Set permissions on storage and bootstrap/cache directories
+  file:
+    path: "{{ item }}"
+    mode: "0775"
+    recurse: yes
+  loop:
+    - "{{ website_path }}/storage"
+    - "{{ website_path }}/bootstrap/cache"
+
+- name: Create .env file from .env.example
+  copy:
+    src: "{{ website_path }}/.env.example"
+    dest: "{{ website_path }}/.env"
+    remote_src: yes
+    force: no
+
+- name: Generate Laravel application key
+  command: php {{ website_path }}/artisan key:generate
+  args:
+    chdir: "{{ website_path }}"

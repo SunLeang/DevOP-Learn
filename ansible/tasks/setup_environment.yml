@@ -1,0 +1,89 @@
+- name: Install required packages
+  apt:
+    name:
+      - nginx
+      - php8.2-fpm
+      - php8.2-sqlite3
+      - php8.2-mbstring
+      - php8.2-zip
+      - php8.2-bcmath
+      - php8.2-tokenizer
+      - php-mysql
+      - php-xml
+      - php-curl
+      - composer
+      - npm
+      - git
+      - mariadb-server
+    state: present
+    update_cache: true
+
+- name: Ensure nginx is running via shell fallback
+  ansible.builtin.shell: |
+    service nginx status || service nginx start
+
+- name: Ensure PHP-FPM is running
+  ansible.builtin.shell: |
+    service php8.2-fpm status || service php8.2-fpm start
+
+- name: Create PHP-FPM socket directory
+  file:
+    path: /run/php
+    state: directory
+    mode: "0755"
+
+- name: Remove default nginx config from conf.d
+  file:
+    path: /etc/nginx/conf.d/default.conf
+    state: absent
+
+- name: Disable default nginx site
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Create default test directory
+  file:
+    path: /var/www/html/default/public
+    state: directory
+    mode: "0755"
+
+- name: Create test index.php
+  copy:
+    content: |
+      <?php
+      phpinfo();
+      ?>
+    dest: /var/www/html/default/public/index.php
+    mode: "0644"
+
+- name: Create default site config
+  copy:
+    content: |
+      server {
+          listen 80 default_server;
+          server_name localhost;
+          root /var/www/html/staging/public;
+          index index.php index.html;
+          
+          location / {
+              try_files $uri $uri/ /index.php?$query_string;
+          }
+          
+          location ~ \.php$ {
+              fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+              fastcgi_index index.php;
+              include fastcgi_params;
+              fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+          }
+      }
+    dest: /etc/nginx/conf.d/default.conf
+    mode: "0644"
+
+- name: Restart PHP-FPM after installing extensions
+  ansible.builtin.shell: |
+    service php8.2-fpm restart
+
+- name: Reload nginx after config change
+  ansible.builtin.shell: |
+    service nginx reload || nginx -s reload

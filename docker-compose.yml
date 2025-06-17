@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+  ansible-i4d:
+    image: alpine:latest
+    container_name: ansible-i4d
+    command: sh -c "apk add --no-cache ansible openssh sshpass git && tail -f /dev/null"
+    volumes:
+      - ./ansible:/ansible
+    depends_on:
+      - nginx-i4d
+    networks:
+      - ansible-net
+
+  nginx-i4d:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nginx-i4d
+    ports:
+      - "8081:80"
+    tty: true
+    networks:
+      - ansible-net
+
+networks:
+  ansible-net:
+    external: true
