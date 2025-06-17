@@ -10,6 +10,8 @@
       vars:
         website_path: /var/www/html/staging
         db_name: staging_db
+        db_user: staging_db_user
+        db_password: secure_password_123
         server_name: i4gic2024.staging
 
     - name: Deploy nginx config for staging
@@ -26,6 +28,8 @@
       vars:
         website_path: /var/www/html/production
         db_name: prod_db
+        db_user: prod_db_user
+        db_password: secure_password_123
         server_name: i4gic2024.com
 
     - name: Deploy nginx config for production
