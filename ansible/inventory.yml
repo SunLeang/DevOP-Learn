@@ -1,8 +1,0 @@
-all:
-  hosts:
-    child_node:
-      ansible_host: nginx-i4d
-      ansible_user: root
-      ansible_ssh_pass: P@ssw0rd1
-      ansible_connection: ssh
-      ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
